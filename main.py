@@ -17,13 +17,17 @@ def main(file: str):
         return
 
     with open(file, "r") as f:
+        vulnerableHosts: list = []
+        notVulnerableHosts: list = []
         for url in f.readlines():
             sc: scan.Scanner = scan.Scanner(url.strip("\n"))
             scan_result: bool = sc.scan()
             if scan_result is True:
-                print("%s : TRUE" % (url))
+                vulnerableHosts.append(url)
+                print("%s : TRUE" % url)
             else:
-                print("%s : FALSE" % (url))
+                notVulnerableHosts.append(url)
+                print("%s : FALSE" % url)
 
 
 if __name__ == "__main__":
