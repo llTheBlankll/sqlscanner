@@ -23,14 +23,16 @@ class Scanner(threading.Thread):
         else:
             raise validators.ValidationFailure("Invalid URL %s " % url)
 
+        self.result: bool = False
     """
     Returns True if the URL is injectable
     False if not
     """
 
-    def scan(self) -> bool:
+    def run(self) -> bool:
         try:
             request = requests.get(self.url + "'")  # Adds ' (single quote) for testing the sql injection
+            is_vulnerable: bool = False
 
             content = request.text
             if request.status_code == 200:
@@ -40,11 +42,18 @@ class Scanner(threading.Thread):
                 All detection methods are below
                 """
                 if "you have an error" in content and "sql syntax" in content and "right syntax" in content:
-                    return True
+                    self.result = True
 
                 if "Warning" in content and "to be resource" in content and "expects" in content and "parameter" in content:
+                    self.result = True
+
+                if self.result:
+                    print(f"{self.url} is VULNERABLE")
+                    self.result = False
                     return True
 
+                print(f"{self.url} is NOT VULNERABLE")
+                self.result = False
                 return False
         except requests.ConnectTimeout as e:
             print("Connection Timeout: %s" % e)
@@ -52,3 +61,7 @@ class Scanner(threading.Thread):
             print("Connection Error: %s" % e)
         except TypeError as e:
             print("Type Error: %s " % e)
+
+    def join(self):
+        threading.Thread.join(self)
+        return self.result
