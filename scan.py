@@ -3,7 +3,8 @@ import threading
 import requests
 import validators
 
-user_agent: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+user_agent: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 " \
+                  "Safari/537.36"
 
 
 class Scanner(threading.Thread):
@@ -11,17 +12,13 @@ class Scanner(threading.Thread):
     def __init__(self, url: str):
         super().__init__()
 
-        # Check if the URL is valid.
-        if validators.url(url):
-            self.url = url
+        self.url = url
 
-            # Create new session
-            self.request_session = requests.Session()
+        # Create new session
+        self.request_session = requests.Session()
 
-            # Set user agent
-            self.request_session.headers = {"User-Agent": user_agent}
-        else:
-            raise validators.ValidationFailure("Invalid URL %s " % url)
+        # Set user agent
+        self.request_session.headers = {"User-Agent": user_agent}
 
         self.result: bool = False
     """
@@ -29,10 +26,9 @@ class Scanner(threading.Thread):
     False if not
     """
 
-    def run(self) -> bool:
+    def run(self):
         try:
-            request = requests.get(self.url + "'")  # Adds ' (single quote) for testing the sql injection
-            is_vulnerable: bool = False
+            request = requests.get(self.url + "'", timeout=10)  # Adds ' (single quote) for testing the sql injection
 
             content = request.text
             if request.status_code == 200:
@@ -50,18 +46,19 @@ class Scanner(threading.Thread):
                 if self.result:
                     print(f"{self.url} is VULNERABLE")
                     self.result = False
-                    return True
 
                 print(f"{self.url} is NOT VULNERABLE")
                 self.result = False
-                return False
         except requests.ConnectTimeout as e:
             print("Connection Timeout: %s" % e)
         except requests.ConnectionError as e:
             print("Connection Error: %s" % e)
         except TypeError as e:
             print("Type Error: %s " % e)
+        except Exception as e:
+            print(e)
+            pass
 
-    def join(self):
+    def join(self, **kwargs) -> tuple:
         threading.Thread.join(self)
-        return self.result
+        return self.url, self.result
