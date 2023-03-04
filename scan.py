@@ -9,10 +9,11 @@ user_agent: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, li
 
 class Scanner(threading.Thread):
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, timeout=30):
         super().__init__()
 
         self.url = url
+        self.timeout: int = timeout
 
         # Create new session
         self.request_session = requests.Session()
@@ -28,7 +29,7 @@ class Scanner(threading.Thread):
 
     def run(self):
         try:
-            request = requests.get(self.url + "'", timeout=10)  # Adds ' (single quote) for testing the sql injection
+            request = requests.get(self.url + "'", timeout=self.timeout)  # Adds ' (single quote) for testing the sql injection
 
             content = request.text
             if request.status_code == 200:
@@ -39,16 +40,18 @@ class Scanner(threading.Thread):
                 """
                 if "you have an error" in content and "sql syntax" in content and "right syntax" in content:
                     self.result = True
+                    return
 
                 if "Warning" in content and "to be resource" in content and "expects" in content and "parameter" in content:
                     self.result = True
+                    return
 
                 if self.result:
                     print(f"{self.url} is VULNERABLE")
-                    self.result = False
+                    self.result = True
+                    return
 
                 print(f"{self.url} is NOT VULNERABLE")
-                self.result = False
         except requests.ConnectTimeout as e:
             print("Connection Timeout: %s" % e)
         except requests.ConnectionError as e:
