@@ -2,9 +2,13 @@ import threading
 
 import requests
 import validators
+import colorama
+import termcolor
 
 user_agent: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 " \
                   "Safari/537.36"
+
+colorama.init()
 
 
 class Scanner(threading.Thread):
@@ -13,15 +17,18 @@ class Scanner(threading.Thread):
         super().__init__()
 
         self.url = url
+        self.result = False
         self.timeout: int = timeout
 
-        # Create new session
-        self.request_session = requests.Session()
+        if validators.url(url.strip()):
+            # Create new session
+            self.request_session = requests.Session()
 
-        # Set user agent
-        self.request_session.headers = {"User-Agent": user_agent}
+            # Set user agent
+            self.request_session.headers = {"User-Agent": user_agent}
+        else:
+            return
 
-        self.result: bool = False
     """
     Returns True if the URL is injectable
     False if not
@@ -29,7 +36,8 @@ class Scanner(threading.Thread):
 
     def run(self):
         try:
-            request = requests.get(self.url + "'", timeout=self.timeout)  # Adds ' (single quote) for testing the sql injection
+            # Adds ' (single quote) for testing the sql injection
+            request = requests.get(self.url + "'", timeout=self.timeout)
 
             content = request.text
             if request.status_code == 200:
@@ -47,19 +55,16 @@ class Scanner(threading.Thread):
                     return
 
                 if self.result:
-                    print(f"{self.url} is VULNERABLE")
+                    print(f"[{termcolor.colored('+', color='green')}] {self.url}")
                     self.result = True
                     return
 
-                print(f"{self.url} is NOT VULNERABLE")
+                print(f"[{termcolor.colored('-', color='red')}] {self.url}")
         except requests.ConnectTimeout as e:
-            print("Connection Timeout: %s" % e)
+            pass
         except requests.ConnectionError as e:
-            print("Connection Error: %s" % e)
+            pass
         except TypeError as e:
-            print("Type Error: %s " % e)
-        except Exception as e:
-            print(e)
             pass
 
     def join(self, **kwargs) -> tuple:

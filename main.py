@@ -3,6 +3,10 @@ import threading
 import scan
 import argparse
 import os
+import colorama
+
+
+colorama.init()
 
 
 def clear():
@@ -28,7 +32,6 @@ def main(file: str, thread_count: int, timeout: int):
                     if is_vulnerable:
                         vulnerable_hosts.append(url)
                     else:
-                        print(f"RESULT: {is_vulnerable}")
                         not_vulnerable_hosts.append(url)
                     threads.remove(thread)
 
@@ -48,5 +51,4 @@ if __name__ == "__main__":
     parser.add_argument("--threads", "-t", metavar="Thread", dest="threads", default=10, type=int)
     parser.add_argument("--timeout", "-a", metavar="Timeout", dest="timeout", default=30, type=int)
     args = parser.parse_args()
-    print(type(args))
     main(args.file, args.threads, args.timeout)
